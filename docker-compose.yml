@@ -1,0 +1,125 @@
+version: '3.8'
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:5.0
+    container_name: brand_monitor_mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+      MONGO_INITDB_DATABASE: brand_monitor
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./config/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    networks:
+      - brand_monitor_network
+
+  # Redis Cache
+  redis:
+    image: redis:6.2-alpine
+    container_name: brand_monitor_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - brand_monitor_network
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: brand_monitor_backend
+    restart: unless-stopped
+    environment:
+      # Database
+      MONGODB_URL: mongodb://admin:password123@mongodb:27017/brand_monitor?authSource=admin
+      REDIS_URL: redis://redis:6379
+      
+      # Reddit API (set these in .env file)
+      REDDIT_CLIENT_ID: ${REDDIT_CLIENT_ID}
+      REDDIT_CLIENT_SECRET: ${REDDIT_CLIENT_SECRET}
+      REDDIT_USER_AGENT: ${REDDIT_USER_AGENT:-BrandMonitor/1.0}
+      REDDIT_USERNAME: ${REDDIT_USERNAME}
+      REDDIT_PASSWORD: ${REDDIT_PASSWORD}
+      
+      # OpenAI
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      
+      # Application
+      DEBUG: ${DEBUG:-False}
+      SECRET_KEY: ${SECRET_KEY:-your-secret-key-change-in-production}
+      
+      # Monitoring
+      BRAND_KEYWORDS: ${BRAND_KEYWORDS:-your_brand,your_product}
+      MONITOR_SUBREDDITS: ${MONITOR_SUBREDDITS:-all,technology,business}
+      MONITOR_INTERVAL: ${MONITOR_INTERVAL:-300}
+      THREAT_THRESHOLD: ${THREAT_THRESHOLD:-0.7}
+    ports:
+      - "8000:8000"
+    depends_on:
+      - mongodb
+      - redis
+    volumes:
+      - ./backend:/app
+    networks:
+      - brand_monitor_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Frontend Web App
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: brand_monitor_frontend
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000/api/v1
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - brand_monitor_network
+
+  # Nginx Reverse Proxy (Optional)
+  nginx:
+    image: nginx:alpine
+    container_name: brand_monitor_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./config/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./config/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - brand_monitor_network
+    profiles:
+      - production
+
+volumes:
+  mongodb_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  brand_monitor_network:
+    driver: bridge
