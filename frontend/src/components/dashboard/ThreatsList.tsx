@@ -45,7 +45,7 @@ export default function ThreatsList({ threats }: ThreatsListProps) {
     <div className="bg-white shadow rounded-lg">
       <div className="px-4 py-5 sm:p-6">
         <h3 className="text-lg leading-6 font-medium text-gray-900 mb-6">
-        Негативна інформація про Україну
+        Негативна інформація про Apple
       </h3>
         <div className="space-y-4">
           {threats.slice(0, 10).map((threat) => {
