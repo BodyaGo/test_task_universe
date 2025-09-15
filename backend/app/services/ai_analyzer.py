@@ -269,19 +269,29 @@ class AIAnalyzer:
             return ThreatLevel.LOW
     
     async def _identify_threat_categories(self, text: str) -> List[str]:
-        """Identify categories of threats"""
+        """Identify categories of threats with Apple-specific focus"""
         categories = []
         text_lower = text.lower()
         
-        # Define threat category keywords
+        # Define Apple-specific threat category keywords
         category_keywords = {
-            'Product Quality': ['defective', 'broken', 'poor quality', 'faulty', 'malfunctioning'],
-            'Customer Service': ['rude', 'unhelpful', 'poor service', 'bad support', 'ignored'],
-            'Pricing': ['overpriced', 'expensive', 'rip off', 'scam', 'money grab'],
-            'Security': ['data breach', 'privacy', 'security', 'hack', 'leak'],
-            'Legal': ['lawsuit', 'legal action', 'sue', 'court', 'lawyer'],
-            'Reputation': ['boycott', 'avoid', 'warning', 'alert', 'reputation'],
-            'Competition': ['competitor', 'alternative', 'better option', 'switch to']
+            'iPhone Issues': ['iphone', 'battery drain', 'screen crack', 'camera issue', 'face id', 'touch id', 'charging problem', 'overheating', 'ios bug', 'phone', 'mobile', 'cellular'],
+            'Mac Problems': ['macbook', 'imac', 'mac pro', 'mac studio', 'mac mini', 'keyboard issue', 'screen problem', 'thermal throttling', 'logic board', 'mac', 'laptop', 'desktop', 'computer'],
+            'iPad Concerns': ['ipad', 'apple pencil', 'magic keyboard', 'stage manager', 'multitasking', 'app compatibility', 'tablet'],
+            'Apple Watch': ['apple watch', 'watchos', 'battery life', 'heart rate', 'fitness tracking', 'band issue', 'watch', 'wearable', 'smartwatch'],
+            'AirPods/Audio': ['airpods', 'airpods pro', 'airpods max', 'homepod', 'audio quality', 'noise cancellation', 'connection issue', 'headphones', 'earbuds', 'speaker'],
+            'Software Bugs': ['ios', 'macos', 'ipados', 'watchos', 'tvos', 'bug', 'crash', 'freeze', 'slow performance', 'update issue', 'software', 'operating system', 'os'],
+            'App Store Issues': ['app store', 'app review', 'app rejection', 'developer', 'subscription', 'in-app purchase', 'apps', 'application'],
+            'Apple Services': ['icloud', 'apple music', 'apple tv+', 'apple pay', 'apple card', 'apple fitness+', 'siri', 'facetime', 'services', 'streaming', 'cloud'],
+            'Pricing Concerns': ['overpriced', 'expensive', 'apple tax', 'rip off', 'money grab', 'subscription cost', 'upgrade cost', 'price', 'cost', 'expensive'],
+            'Privacy/Security': ['privacy', 'data collection', 'tracking', 'security breach', 'app tracking transparency', 'data leak', 'security', 'private'],
+            'Repair/Support': ['genius bar', 'apple support', 'applecare', 'repair cost', 'right to repair', 'third party repair', 'repair', 'support', 'warranty'],
+            'Competition': ['android', 'samsung', 'google', 'microsoft', 'competitor', 'alternative', 'better option', 'switch to', 'vs', 'versus', 'compare'],
+            'Environmental': ['e-waste', 'sustainability', 'carbon neutral', 'recycling', 'environmental impact', 'environment', 'green', 'eco'],
+            'Legal/Regulatory': ['lawsuit', 'antitrust', 'monopoly', 'app store monopoly', 'epic games', 'eu regulation', 'dma', 'legal', 'court', 'regulation'],
+            'Product Launch': ['wwdc', 'apple event', 'new product', 'rumor', 'leak', 'announcement', 'disappointment', 'launch', 'release', 'keynote'],
+            'Accessibility': ['accessibility', 'voiceover', 'assistive touch', 'hearing aid', 'disability support', 'accessible', 'disability'],
+            'General Apple': ['apple', 'cupertino', 'tim cook', 'steve jobs', 'apple park', 'infinite loop']
         }
         
         for category, keywords in category_keywords.items():
@@ -297,7 +307,7 @@ class AIAnalyzer:
         
         try:
             prompt = f"""
-            Analyze the following Reddit post for brand-related threats or concerns:
+            Analyze the following Reddit post specifically for Apple-related threats, concerns, or opportunities:
             
             Subreddit: {reddit_post.subreddit}
             Title: {reddit_post.title}
@@ -305,26 +315,27 @@ class AIAnalyzer:
             Score: {reddit_post.score}
             Comments: {reddit_post.num_comments}
             
-            Provide a brief analysis of:
-            1. The main concern or issue raised
-            2. The tone and sentiment
-            3. Potential impact on brand reputation
-            4. Context and background
+            As an Apple brand monitoring expert, provide analysis focusing on:
+            1. Apple products/services mentioned and specific issues raised
+            2. User sentiment towards Apple (positive, negative, neutral)
+            3. Potential impact on Apple's brand reputation and customer loyalty
+            4. Product category affected (iPhone, Mac, iPad, Services, etc.)
+            5. Severity level and urgency for Apple's response
+            6. Competitive mentions or comparisons
+            7. Trending topics or emerging issues
             
-            Keep the analysis concise (max 200 words).
+            Consider Apple's ecosystem, user experience philosophy, and brand positioning.
+            Keep analysis concise (max 250 words) but comprehensive.
             """
             
-            response = await asyncio.get_event_loop().run_in_executor(
-                None,
-                lambda: self.openai_client.ChatCompletion.create(
-                    model=settings.threat_detection_model,
-                    messages=[
-                        {"role": "system", "content": "You are a brand monitoring expert analyzing social media content for potential threats."},
-                        {"role": "user", "content": prompt}
-                    ],
-                    max_tokens=settings.max_tokens,
-                    temperature=settings.temperature
-                )
+            response = await self.openai_client.chat.completions.create(
+                model=settings.threat_detection_model,
+                messages=[
+                    {"role": "system", "content": "You are a brand monitoring expert analyzing social media content for potential threats."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=settings.max_tokens,
+                temperature=settings.temperature
             )
             
             return response.choices[0].message.content.strip()
@@ -531,3 +542,82 @@ class AIAnalyzer:
             reasons.append(f"Threat categories: {', '.join(threat_analysis.threat_categories)}")
         
         return "; ".join(reasons)
+    
+    async def categorize_apple_product(self, text: str) -> Dict[str, Any]:
+        """Categorize post by Apple product/service mentioned"""
+        text_lower = text.lower()
+        
+        # Define Apple product categories with keywords
+        product_categories = {
+            'iPhone': ['iphone', 'iphone 15', 'iphone 14', 'iphone 13', 'iphone 12', 'iphone se', 'ios', 'face id', 'touch id', 'lightning', 'magsafe'],
+            'iPad': ['ipad', 'ipad pro', 'ipad air', 'ipad mini', 'apple pencil', 'magic keyboard', 'ipados', 'stage manager'],
+            'Mac': ['macbook', 'macbook pro', 'macbook air', 'imac', 'mac pro', 'mac studio', 'mac mini', 'macos', 'apple silicon', 'm1', 'm2', 'm3'],
+            'Apple Watch': ['apple watch', 'watch series', 'watch ultra', 'watch se', 'watchos', 'digital crown', 'heart rate', 'ecg'],
+            'AirPods': ['airpods', 'airpods pro', 'airpods max', 'spatial audio', 'noise cancellation', 'transparency mode'],
+            'Apple TV': ['apple tv', 'apple tv 4k', 'tvos', 'siri remote', 'airplay'],
+            'HomePod': ['homepod', 'homepod mini', 'siri speaker', 'smart speaker'],
+            'Apple Services': ['app store', 'icloud', 'apple music', 'apple tv+', 'apple pay', 'apple card', 'apple fitness+', 'apple arcade', 'apple news+'],
+            'Developer Tools': ['xcode', 'swift', 'swiftui', 'objective-c', 'ios development', 'mac development', 'app development'],
+            'Accessories': ['magic mouse', 'magic keyboard', 'magic trackpad', 'studio display', 'pro display xdr', 'thunderbolt', 'usb-c'],
+            'Software': ['safari', 'mail', 'photos', 'messages', 'facetime', 'siri', 'spotlight', 'time machine', 'boot camp']
+        }
+        
+        detected_categories = []
+        confidence_scores = {}
+        
+        for category, keywords in product_categories.items():
+            matches = [keyword for keyword in keywords if keyword in text_lower]
+            if matches:
+                detected_categories.append(category)
+                # Calculate confidence based on number of matches and keyword specificity
+                confidence = min(len(matches) * 0.3 + 0.4, 1.0)
+                confidence_scores[category] = confidence
+        
+        # Determine primary category (highest confidence)
+        primary_category = None
+        if detected_categories:
+            primary_category = max(confidence_scores.keys(), key=lambda k: confidence_scores[k])
+        
+        return {
+            'primary_category': primary_category,
+            'all_categories': detected_categories,
+            'confidence_scores': confidence_scores,
+            'is_apple_related': len(detected_categories) > 0
+        }
+    
+    async def extract_apple_topics(self, text: str) -> Dict[str, Any]:
+        """Extract Apple-specific topics and themes from text"""
+        text_lower = text.lower()
+        
+        # Define Apple-specific topic keywords
+        topic_keywords = {
+            'Product Launch': ['wwdc', 'apple event', 'keynote', 'announcement', 'new product', 'release date', 'rumor', 'leak'],
+            'Performance': ['performance', 'speed', 'benchmark', 'fast', 'slow', 'lag', 'smooth', 'responsive'],
+            'Battery Life': ['battery', 'battery life', 'charging', 'power', 'drain', 'usage', 'standby'],
+            'Design': ['design', 'build quality', 'premium', 'materials', 'aluminum', 'glass', 'titanium', 'aesthetic'],
+            'Camera': ['camera', 'photo', 'video', 'portrait', 'night mode', 'cinematic', 'photography'],
+            'Display': ['display', 'screen', 'retina', 'promotion', 'brightness', 'color', 'oled', 'lcd'],
+            'Ecosystem': ['ecosystem', 'continuity', 'handoff', 'universal control', 'airdrop', 'icloud sync'],
+            'Privacy': ['privacy', 'security', 'app tracking transparency', 'data protection', 'encryption'],
+            'Pricing': ['price', 'cost', 'expensive', 'cheap', 'value', 'worth it', 'overpriced', 'affordable'],
+            'Competition': ['vs samsung', 'vs google', 'vs microsoft', 'android', 'windows', 'competitor'],
+            'Updates': ['update', 'ios update', 'macos update', 'software update', 'bug fix', 'feature'],
+            'Repair': ['repair', 'fix', 'broken', 'warranty', 'applecare', 'genius bar', 'right to repair']
+        }
+        
+        detected_topics = []
+        topic_scores = {}
+        
+        for topic, keywords in topic_keywords.items():
+            matches = [keyword for keyword in keywords if keyword in text_lower]
+            if matches:
+                detected_topics.append(topic)
+                # Calculate topic relevance score
+                score = min(len(matches) * 0.25 + 0.3, 1.0)
+                topic_scores[topic] = score
+        
+        return {
+            'topics': detected_topics,
+            'topic_scores': topic_scores,
+            'primary_topic': max(topic_scores.keys(), key=lambda k: topic_scores[k]) if topic_scores else None
+        }

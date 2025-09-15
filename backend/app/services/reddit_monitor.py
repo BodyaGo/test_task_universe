@@ -97,8 +97,8 @@ class RedditMonitor:
             
             # Search for posts containing brand keywords
             async for reddit_post in self.reddit_client.search_posts_by_keywords(
-                keywords=settings.brand_keywords,
-                subreddits=settings.monitor_subreddits,
+                keywords=settings.brand_keywords_list,
+                subreddits=settings.monitor_subreddits_list,
                 limit=100,
                 time_filter="day"
             ):
@@ -130,7 +130,7 @@ class RedditMonitor:
             return []
     
     async def analyze_post(self, reddit_post: RedditPost) -> BrandMention:
-        """Analyze a Reddit post for sentiment and threats"""
+        """Analyze a Reddit post for sentiment and threats with Apple-specific categorization"""
         try:
             # Combine title and content for analysis
             full_text = f"{reddit_post.title or ''} {reddit_post.content or ''}".strip()
@@ -140,8 +140,12 @@ class RedditMonitor:
             
             # Perform threat analysis
             threat_analysis = await self.ai_analyzer.analyze_threat(
-                reddit_post, settings.brand_keywords
+                reddit_post, settings.brand_keywords_list
             )
+            
+            # Perform Apple-specific categorization
+            product_categorization = await self.ai_analyzer.categorize_apple_product(full_text)
+            topic_extraction = await self.ai_analyzer.extract_apple_topics(full_text)
             
             # Generate response recommendation
             response_recommendation = None
@@ -150,19 +154,28 @@ class RedditMonitor:
                     reddit_post, threat_analysis
                 )
             
-            # Create brand mention
+            # Create brand mention with Apple-specific data
             mention = BrandMention(
                 reddit_post=reddit_post,
                 sentiment_analysis=sentiment_analysis,
                 threat_analysis=threat_analysis,
                 response_recommendation=response_recommendation,
-                processed_at=datetime.utcnow()
+                processed_at=datetime.utcnow(),
+                # Apple-specific categorization
+                apple_product_category=product_categorization.get('primary_category'),
+                apple_product_categories=product_categorization.get('all_categories', []),
+                apple_topics=topic_extraction.get('topics', []),
+                apple_primary_topic=topic_extraction.get('primary_topic'),
+                is_apple_related=product_categorization.get('is_apple_related', False)
             )
             
             logger.info(
                 f"Analyzed post {reddit_post.id}: "
                 f"sentiment={sentiment_analysis.sentiment.value}, "
-                f"threat={threat_analysis.threat_level.value}"
+                f"threat={threat_analysis.threat_level.value}, "
+                f"apple_related={mention.is_apple_related}, "
+                f"product_category={mention.apple_product_category}, "
+                f"primary_topic={mention.apple_primary_topic}"
             )
             
             return mention

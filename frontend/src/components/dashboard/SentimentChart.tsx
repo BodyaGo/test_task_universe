@@ -93,7 +93,7 @@ export default function SentimentChart({ data }: SentimentChartProps) {
     <div className="bg-white shadow rounded-lg">
       <div className="px-4 py-5 sm:p-6">
         <h3 className="text-lg leading-6 font-medium text-gray-900 mb-6">
-          Аналіз тональності про Україну
+          Apple Sentiment Analysis
         </h3>
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

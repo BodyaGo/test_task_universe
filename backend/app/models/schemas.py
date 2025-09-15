@@ -63,6 +63,12 @@ class BrandMention(BaseModel):
     is_reviewed: bool = Field(False, description="Whether manually reviewed")
     notes: str = Field("", description="Manual notes")
     tags: List[str] = Field(default_factory=list, description="Custom tags")
+    # Apple-specific categorization
+    apple_product_category: Optional[str] = Field(None, description="Primary Apple product category")
+    apple_product_categories: List[str] = Field(default_factory=list, description="All Apple product categories mentioned")
+    apple_topics: List[str] = Field(default_factory=list, description="Apple-specific topics discussed")
+    apple_primary_topic: Optional[str] = Field(None, description="Primary Apple topic")
+    is_apple_related: bool = Field(False, description="Whether post is Apple-related")
 
 class MonitoringStats(BaseModel):
     total_mentions: int = Field(0, description="Total mentions found")

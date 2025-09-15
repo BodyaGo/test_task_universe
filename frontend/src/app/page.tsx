@@ -60,8 +60,8 @@ export default function Dashboard() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Brand Monitor Dashboard</h1>
-            <p className="text-gray-600">Real-time monitoring of your brand mentions on Reddit</p>
+            <h1 className="text-2xl font-bold text-gray-900">Apple Brand Monitor Dashboard</h1>
+            <p className="text-gray-600">Real-time monitoring of Apple brand mentions on Reddit</p>
           </div>
           <button
             onClick={loadDashboardData}
@@ -75,7 +75,7 @@ export default function Dashboard() {
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatsCard
-            title="Згадки про Україну"
+            title="Apple Mentions"
             value={stats?.total_mentions || 0}
             icon={ChatBubbleLeftRightIcon}
             color="blue"
@@ -83,7 +83,7 @@ export default function Dashboard() {
             changeType="increase"
           />
           <StatsCard
-            title="Негативні повідомлення"
+            title="Negative Mentions"
             value={threats.filter(t => t.threat_analysis?.threat_level === 'high').length}
             icon={ExclamationTriangleIcon}
             color="red"
@@ -91,7 +91,7 @@ export default function Dashboard() {
             changeType="decrease"
           />
           <StatsCard
-            title="Позитивні відгуки"
+            title="Positive Feedback"
             value={`${Math.round((stats?.sentiment_distribution?.positive || 0) / Math.max(stats?.total_mentions || 1, 1) * 100)}%`}
             icon={ChartBarIcon}
             color="green"
@@ -99,7 +99,7 @@ export default function Dashboard() {
             changeType="increase"
           />
           <StatsCard
-            title="Активний моніторинг"
+            title="Active Monitoring"
             value="24/7"
             icon={EyeIcon}
             color="purple"

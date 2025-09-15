@@ -5,8 +5,8 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Моніторинг України - Аналіз інформації в реальному часі',
-  description: 'Моніторинг згадок про Україну на Reddit з AI-аналізом тональності та виявленням загроз',
+  title: 'Apple Brand Monitor - Real-time Brand Analysis',
+  description: 'Monitor Apple brand mentions on Reddit with AI-powered sentiment analysis and threat detection',
 }
 
 export default function RootLayout({
